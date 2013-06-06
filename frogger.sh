@@ -6,7 +6,7 @@
 # Twitter = @commonexploits
 # 28/11/2012
 # Requires arp-scan >= 1.8 for VLAN tagging, yersinia, tshark, vconfig and screen
-# Tested on Bactrack 5 with Cisco devices - it can be used over SSH
+# Tested on Bactrack 5 and Kali with Cisco devices - it can be used over SSH
 # 1.4 changes - Speed improvements on CDP scanning made by Bernardo Damele.
 
 
@@ -39,7 +39,6 @@ CDPON=""
 VERSION="1.7"
 
 ARPVER=$(arp-scan -V 2>&1 | grep "arp-scan [0-9]" |awk '{print $2}' | cut -d "." -f 1,2)
-echo "$ARPVER"
 clear
 echo -e "\e[00;32m########################################################\e[00m"
 echo "***   Frogger - The VLAN Hopper Version $VERSION  ***"
@@ -140,7 +139,7 @@ do
 				then
 					echo -e "\e[01;31m[!]\e[00m No CDP Packets were found, perhaps CDP is not enabled on the network. Try increasing the CDP time and try again"
 					echo ""
-					exit 1
+					echo $CDPON >CDPONTMP
 			fi		
 			;;		
 			VTP\ Management\ Domain:*)
@@ -148,7 +147,7 @@ do
 				then
 					continue
             fi
-			MANDOM="`printf -- \"${line}\n\" | cut -f2 -d\":\"`"
+			MANDOM="`printf -- \"${line}\n\" | cut -f2 -d\":\" |sed 's/^[ \t]*//;s/[ \t]*$//'`"
 			if [ "$MANDOM" = "Domain:" ]
 				then
 					echo -e "\e[01;33m[!]\e[00m The VTP domain appears to be set to NULL on the device. Script will continue."
@@ -171,7 +170,7 @@ do
 				then
 					continue
             fi
-			NATID="`printf -- \"${line}\n\" | cut -f2 -d\":\"`"
+			NATID="`printf -- \"${line}\n\" | cut -f2 -d\":\" | sed 's/^[ \t]*//;s/[ \t]*$//'`"
 			if [ -z "$NATID" ]
 				then
 					echo -e "\e[01;33m[!]\e[00m I didn't find any Native VLAN ID within CDP packets. Perhaps CDP is not enabled."
@@ -210,7 +209,7 @@ do
 				then
 					continue
             fi
-			MANIP="`printf -- \"${line}\n\" | cut -f2 -d\":\"`"
+			MANIP="`printf -- \"${line}\n\" | cut -f2 -d\":\" | sed 's/^[ \t]*//;s/[ \t]*$//'`"
 			if [ -z "$MANIP" ]
 				then
 					echo -e "\e[01;31m[!]\e[00m I didn't find any management addresses within CDP packets. Try increasing the CDP time and try again."
@@ -227,6 +226,16 @@ do
 			;;
 	esac
 done
+
+# if CDP was not found, then exit script
+cat CDPONTMP 2>&1 |grep "0 packets captured" >/dev/null
+if [ $? = 0 ] 
+	then
+		rm CDPONTMP 2>/dev/null
+		exit 1
+	else
+		rm CDPONTMP 2>/dev/null
+fi
 
 echo ""
 echo -e "\e[01;32m[-]\e[00m Now Running DTP Attack on interface $INT, waiting "$DTPWAIT" seconds to trigger."
@@ -265,7 +274,7 @@ echo "Looking at the management address, try to scan "$SCANSDTP".0/24"
 echo -e "\e[1;31m------------------------------------------------------------------------------------------------------------------------\e[00m"
 read IPADDRESS
 
-rm MANIPTMP 2>&1 >/dev/null
+rm MANIPTMP 2>/dev/null
 clear
 for VLANIDSCAN in $(echo "$VLANIDS") 
 do
