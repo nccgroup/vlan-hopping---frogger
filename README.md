@@ -35,6 +35,7 @@ Requirements
 * Arp-Scan 1.8 (in order to support VLAN tags must be V1.8 - Backtrack ships with V1.6 that does not support VLAN tags) http://www.nta-monitor.com/tools-resources/security-tools/arp-scan
 * Yersina (built into Backtrack)
 * Tshark (buit into Backtrack)
+* Screen (built into Backtrack)
 
 
 Tested on Backtrack 5 and Kali.
