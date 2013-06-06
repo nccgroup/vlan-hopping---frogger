@@ -50,4 +50,5 @@ Screen Shot
 Change Log
 =======================
 
-Version 1.5 - Official release.
+* Version 1.7 - New look, bug fixes and speed improvements.
+* Version 1.5 - Official release.
