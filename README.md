@@ -36,9 +36,12 @@ Requirements
 * Yersina (built into Backtrack)
 * Tshark (buit into Backtrack)
 * Screen (built into Backtrack)
+* Vconfig (built into Backtrack)
 
 
 Tested on Backtrack 5 and Kali.
+
+* Notes for VMware. VLAN hopping generally (not just this script) can have issues within VMware if running the VM within Windows with certain Intel drivers. The Intel drivers strip off the tags before it reaches the VM. Either use an external USB ethernet card such as a DLink USB 2.0 DUB-E100 (old model 10/100 not gigabit) or boot into Backtrack nativiely from a USB stick. Intel has published a registry fix, but this does not seem to work on some models: http://www.intel.com/support/network/sb/CS-005897.htm
 
 
 Screen Shot    
