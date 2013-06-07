@@ -20,6 +20,7 @@ How To Use
 =======================
     ./frogger.sh
 
+Run as root.
 
 Features	
 =======================
