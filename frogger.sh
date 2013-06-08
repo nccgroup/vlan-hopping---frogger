@@ -17,6 +17,8 @@
 
 # https://github.com/nccgroup/vlan-hopping
 
+# https://github.com/nccgroup/vlan-hopping/wiki
+
 #Released under AGPL see LICENSE for more information
 
 ######################################################################################
@@ -25,6 +27,8 @@
 TAGSEC="90" #change this value for the number of seconds to sniff for 802.1Q tagged packets
 CDPSEC="90" # change this value for the number of seconds to sniff for CDP packets once verified CDP is on
 DTPWAIT="20" # amount of time to wait for DTP attack via yersinia to trigger
+NICCHECK="on" # if you are confident your built in NIC will work within VMware then set to off. i.e you have made reg change for Intel card.
+
 
 # Variables needed throughout execution, do not touch
 MANDOM=""
@@ -36,7 +40,7 @@ CDPON=""
 # Script begins
 #===============================================================================
 
-VERSION="1.7"
+VERSION="1.8"
 
 ARPVER=$(arp-scan -V 2>&1 | grep "arp-scan [0-9]" |awk '{print $2}' | cut -d "." -f 1,2)
 clear
@@ -46,7 +50,10 @@ echo ""
 echo "***   Auto enumerates VLANs and device discovery ***"
 echo -e "\e[00;32m########################################################\e[00m"
 echo ""
-
+echo "For usage information refer to the Wiki"
+echo ""
+echo "https://github.com/nccgroup/vlan-hopping/wiki"
+echo ""
 #Check for yersinia
 which yersinia >/dev/null
 if [ $? -eq 1 ]
@@ -112,7 +119,7 @@ echo -e "\e[1;31m----------------------------------------------------------\e[00
 echo -e "\e[01;31m[?]\e[00m Enter the interface to scan from as the source"
 echo -e "\e[1;31m----------------------------------------------------------\e[00m"
 read INT
-ifconfig | grep -i -w $INT >/dev/null
+ifconfig | grep -i -w "$INT" >/dev/null
 
 if [ $? = 1 ]
 	then
@@ -122,6 +129,42 @@ if [ $? = 1 ]
 		exit 1
 fi
 
+# check for Vmware and non USB ethernet card.
+if [ "$NICCHECK" = "on" ]
+then
+dmidecode | grep -i "vmware" >/dev/null
+if [ $? = 0 ]
+	then
+		if [ "$INT" = "eth0" ]
+			then
+				echo ""
+				echo -e "\e[01;33m[!]\e[00m Warning it seems you are running within VMware using the built in network interface "$INT". "
+				echo ""
+				echo "Some built in network cards do not work properly within VMware and VLAN hopping may fail. Ideally use a USB ethernet card, or boot natively into Linux."
+				echo ""
+				echo -e "Script will continue, but see https://github.com/nccgroup/vlan-hopping/wiki for more info relating to VMware and VLAN Hopping"
+				echo ""
+				sleep 3
+				NICDRV=$(ethtool -i $INT | grep -i "driver" | cut -d ":" -f 2 | sed 's/^[ \t]*//;s/[ \t]*$//')
+				modinfo "$NICDRV" |grep -i "intel" >/dev/null
+				if [ $? = 0 ]
+					then
+						echo ""
+						echo -e "\e[01;31m[!]\e[00m Warning it also seems that "$INT" is using Intel drivers."
+						echo ""
+						echo "It is likely the VLAN hopping with fail with Intel Windows drivers and VMware unless the '"MonitorMode"' registry change has been made."
+						echo ""
+						echo "see https://github.com/nccgroup/vlan-hopping/wiki for how to apply the Intel fix."
+						echo ""
+						echo "If you have already made the reg change, then set NICCHECK to "off" in the script header to prevent the check running again"
+						echo ""
+						echo "Press Enter to continue if you have made the registry change, or CTRL-C to quit."
+						echo ""
+						read ENTERKEY
+				fi
+		fi
+fi
+fi
 echo ""
 echo -e "\e[01;32m[-]\e[00m Now Sniffing CDP Packets on $INT - Please wait for "$CDPSEC" seconds."
 echo ""
@@ -249,7 +292,6 @@ echo -e "\e[01;32m[-]\e[00m Now Extracting VLAN IDs on interface $INT, sniffing 
 echo ""
 
 VLANIDS=$(tshark -a duration:$TAGSEC -i $INT -R "vlan" -x -V 2>&1 |grep -o " = ID: .*" |awk '{ print $NF }' | sort --unique)
-#clear
 
 if [ -z "$VLANIDS" ]
 	then
