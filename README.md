@@ -54,6 +54,7 @@ Screen Shot
 Change Log
 =======================
 
+* Version 2.0 - (Coming soon) will support Cisco ISL encapsulation.
 * Version 1.8 - Added VMware detection and Intel NIC detection to assist with common problems within VMware.
 * Version 1.7 - New look, bug fixes and speed improvements.
 * Version 1.5 - Official release.
