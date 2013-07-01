@@ -54,6 +54,15 @@ echo "For usage information refer to the Wiki"
 echo ""
 echo "https://github.com/nccgroup/vlan-hopping/wiki"
 echo ""
+
+# Check if we're root
+if [[ $EUID -ne 0 ]]; then
+        echo ""
+        echo -e "\e[01;31m[!]\e[00m This program must be run as root. Run again with 'sudo'"
+        echo ""
+        exit 1
+fi
+
 #Check for yersinia
 which yersinia >/dev/null
 if [ $? -eq 1 ]
@@ -108,6 +117,16 @@ else
 			echo -e "\e[01;31m[!]\e[00m Unable to find version 1.8 of arp-scan, 1.8 is required for VLAN tagging. Install at least version 1.8 and try again. Download from www.nta-monitor.com."
 			exit 1
 	fi
+fi
+
+#Check for ethtool
+which ethtool >/dev/null
+if [ $? -eq 1 ]
+        then
+                echo ""
+                echo -e "\e[01;31m[!]\e[00m Unable to find the required ethtool program, install and try again."
+                echo ""
+                exit 1
 fi
 
 echo ""
