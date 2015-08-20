@@ -8,7 +8,7 @@
 # Requires arp-scan >= 1.8 for VLAN tagging, yersinia, tshark, vconfig and screen
 # Tested on Bactrack 5 and Kali with Cisco devices - it can be used over SSH
 # 1.4 changes - Speed improvements on CDP scanning made by Bernardo Damele.
-
+# 1.9 changes - added signal handling made by e williams.
 
 #####################################################################################
 # Released as open source by NCC Group Plc - http://www.nccgroup.com/
@@ -19,7 +19,7 @@
 
 # https://github.com/nccgroup/vlan-hopping/wiki
 
-#Released under AGPL see LICENSE for more information
+# Released under AGPL see LICENSE for more information
 
 ######################################################################################
 
@@ -29,6 +29,8 @@ CDPSEC="90" # change this value for the number of seconds to sniff for CDP packe
 DTPWAIT="20" # amount of time to wait for DTP attack via yersinia to trigger
 NICCHECK="on" # if you are confident your built in NIC will work within VMware then set to off. i.e you have made reg change for Intel card.
 
+# sigint definition
+trap exit_gracefully SIGINT
 
 # Variables needed throughout execution, do not touch
 MANDOM=""
@@ -37,10 +39,18 @@ DEVID=""
 MANIP=""
 CDPON=""
 
+
+# simple signal handler
+exit_gracefully()
+{
+  echo -en "\n*** ctrl-c - Exiting ***\n"
+  exit $?
+}
+
 # Script begins
 #===============================================================================
 
-VERSION="1.8"
+VERSION="1.9"
 
 ARPVER=$(arp-scan -V 2>&1 | grep "arp-scan [0-9]" |awk '{print $2}' | cut -d "." -f 1,2)
 clear
@@ -111,7 +121,7 @@ if [ $? -eq 1 ]
 		exit 1
 else
 	compare_arpscan=$(echo "$ARPVER < 1.8" | bc)
-	if [ $compare_arpscan -eq 1 ] 
+	if [ $compare_arpscan -eq 1 ]
 		then
 			echo ""
 			echo -e "\e[01;31m[!]\e[00m Unable to find version 1.8 of arp-scan, 1.8 is required for VLAN tagging. Install at least version 1.8 and try again. Download from www.nta-monitor.com."
@@ -202,8 +212,8 @@ do
 					echo -e "\e[01;31m[!]\e[00m No CDP Packets were found, perhaps CDP is not enabled on the network. Try increasing the CDP time and try again"
 					echo ""
 					echo $CDPON >CDPONTMP
-			fi		
-			;;		
+			fi
+			;;
 			VTP\ Management\ Domain:*)
             if [ -n "$MANDOM" ]
 				then
@@ -219,12 +229,12 @@ do
 					echo -e "\e[01;33m[!]\e[00m I didn't find any VTP management domain within CDP packets. Possibly CDP is not enabled. Script will continue."
 					echo ""
 			else
-				
+
 				echo -e "\e[1;32m----------------------------------------------------------\e[00m"
 				echo -e "\e[01;32m[+]\e[00m The following Management domains were found"
 				echo -e "\e[1;32m----------------------------------------------------------\e[00m"
 				echo -e "\e[00;32m$MANDOM\e[00m"
-				echo ""			
+				echo ""
 			fi
 			;;
 		Native\ VLAN:*)
@@ -244,7 +254,7 @@ do
 					echo -e "\e[00;32m$NATID\e[00m"
 					echo ""
 			fi
-			
+
 			;;
 		*RELEASE\ SOFTWARE*)
             if [ -n "$DEVID" ]
@@ -262,9 +272,9 @@ do
 					echo -e "\e[1;32m-----------------------------------------------------------------------------------------------------------\e[00m"
 					echo -e "\e[00;32m$DEVID\e[00m"
 					echo ""
-				
+
 			fi
-			
+
 			;;
 		IP\ address:*)
             if [ -n "$MANIP" ]
@@ -284,14 +294,14 @@ do
 					echo $MANIP >MANIPTMP
 					echo ""
 			fi
-			
+
 			;;
 	esac
 done
 
 # if CDP was not found, then exit script
 cat CDPONTMP 2>&1 |grep "0 packets captured" >/dev/null
-if [ $? = 0 ] 
+if [ $? = 0 ]
 	then
 		rm CDPONTMP 2>/dev/null
 		exit 1
@@ -337,7 +347,7 @@ read IPADDRESS
 
 rm MANIPTMP 2>/dev/null
 clear
-for VLANIDSCAN in $(echo "$VLANIDS") 
+for VLANIDSCAN in $(echo "$VLANIDS")
 do
 	echo ""
 	echo -e "\e[1;33m---------------------------------------------------------------------------------------\e[00m"
@@ -349,7 +359,7 @@ do
 		then
 			echo ""
 			echo -e "\e[01;32m[+] Devices were found in VLAN "$VLANIDSCAN"\e[00m"
-			
+
 		else
 			echo -e "\e[01;31m[!]\e[00m No devices found in VLAN "$VLANIDSCAN"."
 	fi
@@ -368,7 +378,7 @@ echo ""
 echo -e "\e[1;31m------------------------------------------------------------------------------------------\e[00m"
 echo ""
 read EXITMENU
-	
+
 	if [ "$EXITMENU" = "1" ]
 		then
 			echo -e "\e[1;31m-----------------------------------------------\e[00m"
@@ -391,7 +401,7 @@ read EXITMENU
 			echo -e "\e[01;32m[+]\e[00m Interface \e[1;32m$INT.$VID\e[00m with IP Address \e[1;32m$VIP\e[00m"
 			echo -e "\e[01;32m+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\e[00m"
 			echo ""
-				
+
 	elif [ "$EXITMENU" = "2" ]
 	then
 		ps -ef | grep "[Yy]ersinia dtp" >/dev/null
