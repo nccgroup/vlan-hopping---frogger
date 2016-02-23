@@ -65,6 +65,11 @@ echo ""
 echo "https://github.com/nccgroup/vlan-hopping/wiki"
 echo ""
 
+# Borrowed principle for bash fn from http://stackoverflow.com/a/4024263
+version_gte() {
+  [ "$1" == "$(echo -e "$1\n$2" | sort -V | tail -n1)" ]
+}
+
 # Check if we're root
 if [[ $EUID -ne 0 ]]; then
         echo ""
@@ -100,6 +105,14 @@ if [ $? -eq 1 ]
 		echo -e "\e[01;31m[!]\e[00m Unable to find the required tshark program, install and try again."
 		echo ""
 		exit 1
+	else
+		TSHARKVER=$(tshark -v | sed -n 1p | awk '{print $2}')
+		if version_gte $TSHARKVER 1.12.1 # Couldn't actually find correct version to start this behaviour from, but this is a relatively current version
+			then
+				TS_FILTER_FLAG="-Y"
+			else
+				TS_FILTER_FLAG="-R"
+		fi
 fi
 
 #Check for screen
@@ -197,7 +210,7 @@ fi
 echo ""
 echo -e "\e[01;32m[-]\e[00m Now Sniffing CDP Packets on $INT - Please wait for "$CDPSEC" seconds."
 echo ""
-OUTPUT="`tshark -a duration:$CDPSEC -i $INT -R \"cdp\" -V 2>&1 | sort --unique`"
+OUTPUT="`tshark -a duration:$CDPSEC -i $INT $TS_FILTER_FLAG \"cdp\" -V 2>&1 | sort --unique`"
 printf -- "${OUTPUT}\n" | while read line
 do
 	case "${line}" in
