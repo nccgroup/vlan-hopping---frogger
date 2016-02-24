@@ -107,7 +107,7 @@ if [ $? -eq 1 ]
 		exit 1
 	else
 		TSHARKVER=$(tshark -v | sed -n 1p | awk '{print $2}')
-		if version_gte $TSHARKVER 1.12.1 # Couldn't actually find correct version to start this behaviour from, but this is a relatively current version
+		if version_gte $TSHARKVER 1.10.6 # Couldn't actually find correct version to start this behaviour from, but this is a relatively current version
 			then
 				TS_FILTER_FLAG="-Y"
 			else
